@@ -14,7 +14,7 @@ X^{(int)} = clip(round(X/s), x_{min}, x_{max})
 The conversion between fps isn't actually a conversion, but just a reinterpretation of the same data in memory.  
 ![avatar](./docs/imgs/fp.jpg)
 
-Based on IEE754, a real number is represented as:
+Based on IEEE-754, a real number is represented as:
 ```math
 \begin{equation}
 \begin{split}
@@ -23,6 +23,11 @@ real &= (-1)^{b_{n-1}} * 2^{exp} * 1.f \\
 \end{split}
 \end{equation}
 ```
+subnormal number:
+```math
+real =(-1)^{b_{n-1}} * 2^{1-bias} * (0+\sum_{i=1}^k{b_{k-i}*2^{-i}})
+```
+
 
 therefore, 
 
@@ -31,13 +36,13 @@ therefore,
 \begin{split}
 
 exp &= floor(log_2(real)) \\
-1.f &= real * 2^{-exp} = 1 + d_1/2 + d_2/2^2 + ... + d_m/2^m
+1.f &= real * 2^{-exp}
 
 \end{split}
 \end{equation}
 ```
 
-Then, EnMm style fp can be converted as:
+Then, EnMm format fp can be converted as:
 
 
 **ref:** 

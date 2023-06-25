@@ -10,6 +10,57 @@ import torch
 from src.common.symbol import DataType, data_types
 
 
+def convert_to_fp8(tensor, fp8_type="E4M3"):
+	"""
+	convert real number to fp8
+	based on IEEE 754, real = sign * 2^exp * 1.f
+
+	fp32: E8M23
+	fp16: E5M10
+	bf16: E8M7
+	fp8: E4M3, E5M2
+	"""
+	if tensor.dtype == DataType.fp32.name:
+		pass
+
+
+def _convert_fp32_to_fp8(tensor, fp8_type):
+	"""
+	fp32: E8M23
+	"""
+	pass
+
+def _convert_fp16_to_fp8(tensor, fp8_type):
+	"""
+	fp16: E5M10
+	"""
+	pass
+
+def _convert_bf16_to_fp8(tensor, fp8_type):
+	"""
+	bf16: E8M7
+	"""
+	pass
+
+
+
+def convert_from_fp8(tensor, fp_type=DataType.fp16.name):
+	"""
+	convert fp8 to higher precision fp (fp32, fp16, bf16)
+	"""
+	pass
+
+
+def _convert_fp8_to_fp32(tensor):
+	pass
+
+def _convert_fp8_to_fp16(tensor):
+	pass
+
+def _convert_fp8_to_bf16(tensor):
+	pass
+
+
 def convert_fp(tensor, fp_dtype):
 	"""
 	convert real number to one fp dtype
@@ -51,12 +102,6 @@ def convert_fp(tensor, fp_dtype):
 	new_frac = 1 + frac_shift/(2**shift_bits)	# right shift
 	c = torch.tensor(sign*(2**exp)*new_frac, device=tensor.device, dtype=data_types[fp_dtype])	#
 	return c
-
-def _convert_to_low_fp(num, fp_dtype):
-	pass
-
-def _convert_to_high_fp(num, fp_dtype):
-	pass
 
 
 def get_float_bits(float_number, dtype):
