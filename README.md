@@ -3,10 +3,14 @@ model compression: quantization, pruning
 
 ## Quantization
 
-### schema:
-1. fp --> int
 
-2. high fp --> low fp
+### schema:
+1. fp --> int  
+```math
+X^{(int)} = clip(round(X/s), x_{min}, x_{max})
+```
+
+2. high fp --> low fp  
 The conversion between fps isn't actually a conversion, but just a reinterpretation of the same data in memory.  
 ![avatar](./docs/imgs/fp.jpg)
 
