@@ -14,6 +14,9 @@ X^{(int)} = clip(round(X/s), x_{min}, x_{max})
 The conversion between fps isn't actually a conversion, but just a reinterpretation of the same data in memory.  
 ![avatar](./docs/imgs/fp.jpg)
 
+FP8 format:
+![avatar](./docs/imgs/fp8_format.jpg)
+
 Based on IEEE-754, a real number is represented as:
 ```math
 \begin{equation}
@@ -42,7 +45,6 @@ exp &= floor(log_2(real)) \\
 \end{equation}
 ```
 
-Then, EnMm format fp can be converted as:
 
 
 **ref:** 

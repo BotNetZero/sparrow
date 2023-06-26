@@ -15,20 +15,32 @@ def convert_to_fp8(tensor, fp8_type="E4M3"):
 	convert real number to fp8
 	based on IEEE 754, real = sign * 2^exp * 1.f
 
-	fp32: E8M23
-	fp16: E5M10
-	bf16: E8M7
-	fp8: E4M3, E5M2
 	"""
-	if tensor.dtype == DataType.fp32.name:
-		pass
+	dtype = "fp8"+fp8_type.lower()
+	if dtype not in data_types:
+		raise KeyError(f"not support fp8 format: {fp8_type}")
 
+	if tensor.dtype == DataType.fp32.name:
+		fp8_value = _convert_fp32_to_fp8(tensor, fp8_type)
+	else:
+		raise NotImplementedError(f"not support converting {tensor.dtype} to FP8 YET....")
+
+	return torch.tensor(fp8_value, dtype=data_types[dtype], device=tensor.device)
 
 def _convert_fp32_to_fp8(tensor, fp8_type):
 	"""
-	fp32: E8M23
+	fp32: E8M23, bias=127
+	if exp > 0: r = sign * 2^(exp-127) * 1.f
+	if exp == 0: r = sign * 2^(1-127) * 0.f
+	if exp == 255: r = special value
 	"""
-	pass
+	src_num = tensor.item()
+	num_abs = abs(src_num)
+
+	# special
+
+
+
 
 def _convert_fp16_to_fp8(tensor, fp8_type):
 	"""
@@ -130,10 +142,10 @@ def _get_fp32_bits(float_number):
 	"""
 	"""
 	# Convert the floating-point number to its binary representation
-	float_bytes = struct.pack("!f", float_number)
+	float_hex = struct.pack("!f", float_number)
 
 	# Convert the binary representation to a string of bits
-	float_bits = ''.join(format(byte, '08b') for byte in float_bytes)
+	float_bits = ''.join(format(byte, '08b') for byte in float_hex)
 
 	return float_bits
 
@@ -158,3 +170,22 @@ def _get_bf16_bits(float_number):
 	float_bits = ''.join(format(byte, '08b') for byte in float_bytes[0:2])
 	return float_bits
 
+
+def _get_fp8_bits(number):
+	"""
+	Because fp8 is stored in uint8, number is not float, is unsigned int
+	"""
+	if not is_integer(number):
+		raise ValueError(f"converted number [{number}] is not integer")
+	#
+	uint_bytes = struct.pack("!I", number)
+	bits = ''.join(format(byte, '08b') for byte in uint_bytes)
+	return bits
+
+
+def is_integer(num):
+	try:
+		float_num = float(num)
+		return float_num.is_integer()
+	except ValueError:
+		return False
