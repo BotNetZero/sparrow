@@ -1,8 +1,12 @@
 # sparrow
 model compression: quantization, pruning
 
-## Quantization
+## Tasks
+1. :building_construction:FP8 training & infer
+	- :building_construction: conversion btw fps
+	
 
+## Quantization
 
 ### schema:
 1. fp --> int  
@@ -44,7 +48,7 @@ fp8 = \left\{
 	& round(fp32) \\
 	& specials map \\
 	\end{aligned}
-\right
+\right.
 ```
 
 
