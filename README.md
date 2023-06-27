@@ -2,9 +2,15 @@
 model compression: quantization, pruning
 
 ## Tasks
-1. :building_construction:FP8 training & infer
-	- :building_construction: conversion btw fps
-	
+1. :building_construction: FP8 
+	- :white_check: conversion schema
+	- :stop_sign: quantization operation
+
+2. :stop_sign: modules support FP8
+
+3. :stop_sign: FP8 autocast
+
+4. :stop_sign: FP8 & FP32 comparision
 
 ## Quantization
 
@@ -40,13 +46,12 @@ real &= (-1)^{b_{n-1}} * 2^{1-bias} * (0+\sum_{i=1}^k{b_{k-i}*2^{-i}}) \\
 \end{equation}
 ```
 
-conversion format:
+conversion schema:
 ```math
 fp8 = \left\{
 	\begin{aligned}
 	& clip(fp32)  \\
 	& round(fp32) \\
-	& specials map \\
 	\end{aligned}
 \right.
 ```
