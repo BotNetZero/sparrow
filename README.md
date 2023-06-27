@@ -3,7 +3,7 @@ model compression: quantization, pruning
 
 ## Tasks
 1. :building_construction: FP8 
-	- :white_check: conversion schema
+	- :white_check_mark: conversion schema
 	- :stop_sign: quantization operation
 
 2. :stop_sign: modules support FP8
@@ -50,8 +50,9 @@ conversion schema:
 ```math
 fp8 = \left\{
 	\begin{aligned}
-	& clip(fp32)  \\
-	& round(fp32) \\
+	clip(fp32)  \\
+	round(fp32) \\
+	map(specials)
 	\end{aligned}
 \right.
 ```
