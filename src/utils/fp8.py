@@ -7,13 +7,12 @@ Description   :
 import numpy as np
 import torch
 from src.common.symbol import DataType, data_types
-from src.utils.fp_conversion import get_float_bits
 
 class FP8E4M3:
 	"""
 	FP8 E4M3 format:
-	normal: sign * 2^(e-7) * 1.f, exp = e - 7 = [-6, 8]
-	subnormal: sign * 2^(1-6) * 0.f = sign * 2^exp * a.b
+	normal: sign * 2^(e-7) * 1.f, exp = e-7 = [-6, 8]
+	subnormal: sign * 2^(1-7) * 0.f = sign * 2^(-6-m) * 1.f, exp = -6-m
 	Using uint8 to store FP8
 	positive range: 2^(-9) --> 0.875 * 2^(-6) --> 2^(-6) --> 1.75 * 2^8
 							subnormal					normal
@@ -27,10 +26,8 @@ class FP8E4M3:
 	#
 	exp_max = 8		# s.1111.110 = 1.75*2^8
 	exp_min = -6	# s.0001.000 = 2^(-6)
-	frac_max = 7	# s.xxx.111
-	frac_min = 0	# s.xxx.000
 	#
-	dtype = data_types[DataType.fp8e4m3.name]	# uint8
+	dtype = data_types[DataType.fp8.name]	# uint8
 
 	@classmethod
 	def convert_to_fp8(cls, tensor):
@@ -48,6 +45,8 @@ class FP8E4M3:
 		else:
 			raise NotImplementedError(f"Not support type conversion: [{tensor.dtype}] --> FP8E4M3")
 
+		return torch.tensor(fp8_value, dtype=cls.dtype, device=tensor.device)
+
 	@classmethod
 	def convert_to_fp8_specials(cls, tensor):
 		if tensor.item() == float('inf'):
@@ -64,23 +63,38 @@ class FP8E4M3:
 	@classmethod
 	def convert_fp32_to_fp8(cls, tensor):
 		"""
-		E8M23:
-		normal: sign * 2^(exp-127) * 1.f
-		subnormal: sign * 2^(-126) * 0.f = sign * 2^(exp) * a.b, where exp < -126
+		FP32 E8M23:
+		normal: sign * 2^(e-127) * 1.f
+		subnormal: sign * 2^(-126) * 0.f = sign * 2^(-126-m) * 1.f
 		"""
 		src_num = tensor.item()
 		num_abs = abs(src_num)
 		#
-		exp_fp32 = int(np.floor(np.log2(num_abs))) 	# 2^(exp_fp32) = 2^(exp-127) or 2^(exp)
-		if exp_fp32 >= cls.exp_max:
-			exp = 15			# s.1111
-		elif exp_fp32 < cls.exp_min:
-			exp = 0				# s.0000
-		else:
-			exp = exp_fp32 		#
+		exp_fp32 = int(np.floor(np.log2(num_abs))) 	# 2^(exp_fp32) = 2^(e-127) or 2^(-126-m)
+		if exp_fp32 > cls.exp_max:		# overflow, clip
+			e = 15						# s.1111.110
+		elif exp_fp32 < cls.exp_min:	#
+			e = 0						# s.0000
+		else:							# normal range
+			e = exp_fp32+cls.bias		# s.0001 ~ s.1111
 		#
-		frac_fp32 = num_abs * (2**-exp)				# 1.f, 0.f
-
+		exp_fp8 = e - cls.bias
+		frac_fp32 = num_abs * (2**-exp_fp8)	# 2^(exp_fp32-exp_fp16) * 1.f
+		if frac_fp32 >= 2:					# overflow, clip
+			frac = 6						# s.1111.110
+		else:
+			# round
+			shift_num = frac_fp32*(2**3) + 0.5	# left shift 3bits and round
+			# tie even
+			if int(shift_num) % 2 == 0:
+				frac = int(shift_num)
+			else:
+				frac = int(np.ceil(shift_num))
+		#
+		fp8_value = e*2**3 + frac
+		if src_num < 0:
+			fp8_value += 128
+		return fp8_value
 
 	@classmethod
 	def convert_from_fp8(tensor, fp_type=DataType.fp16.name):
@@ -102,7 +116,7 @@ class FP8E5M2:
 	#
 	max = 57344		#
 	#
-	dtype = data_types[DataType.fp8e5m2.name]	# uint8
+	dtype = data_types[DataType.fp8.name]	# uint8
 
 	@classmethod
 	def convert_to_fp8(cls, tensor):
@@ -111,6 +125,6 @@ class FP8E5M2:
 
 	@classmethod
 	def convert_from_fp8(cls, tensor, fp_type=DataType.fp16.name):
-		if tensor.dtype != data_types[DataType.fp8e5m2.name]:
+		if tensor.dtype != data_types[DataType.fp8.name]:
 			raise TypeError(f"tensor type error: [{tensor.dtype}]")
 		pass

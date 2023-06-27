@@ -28,21 +28,23 @@ real &= (-1)^{b_{n-1}} * 2^{exp} * 1.f \\
 ```
 subnormal number:
 ```math
-real =(-1)^{b_{n-1}} * 2^{1-bias} * (0+\sum_{i=1}^k{b_{k-i}*2^{-i}})
-```
-
-
-therefore, 
-
-```math
 \begin{equation}
 \begin{split}
-
-exp &= floor(log_2(real)) \\
-1.f &= real * 2^{-exp}
-
+real &= (-1)^{b_{n-1}} * 2^{1-bias} * (0+\sum_{i=1}^k{b_{k-i}*2^{-i}}) \\
+	 &= (-1)^{b_{n-1}} * 2^{1-bias} * 2^(-i_{min}) * (1+\sum_{i=i_min}^{i_max}{b_{k-i}*2^{-i}})
 \end{split}
 \end{equation}
+```
+
+conversion format:
+```math
+fp8 = \left\{
+	\begin{aligned}
+	& clip(fp32)  \\
+	& round(fp32) \\
+	& specials map \\
+	\end{aligned}
+\right
 ```
 
 
