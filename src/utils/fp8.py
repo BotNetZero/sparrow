@@ -34,6 +34,9 @@ class FP8E4M3:
 
 	@classmethod
 	def convert_to_fp8(cls, tensor):
+		"""
+		convert high precision fp (fp32, fp16, bf16) to fp8
+		"""
 		if tensor.dtype not in (torch.float, torch.float16, torch.bfloat16):
 			raise NotImplementedError(f"Not support type conversion: [{tensor.dtype}] --> FP8E4M3")
 
@@ -66,44 +69,41 @@ class FP8E4M3:
 		src_num = tensor.item()
 		num_abs = abs(src_num)
 		#
-		exp_fp_high = int(np.floor(np.log2(num_abs))) 	# e.g.: 2^(exp_fp32) = 2^(e-127) or 2^(-126-m)
-		# print("exp_fp_high:", exp_fp_high)
-		if exp_fp_high > cls.exp_max:	# overflow, clip
+		exp_fp32 = int(np.floor(np.log2(num_abs))) 	# e.g.: 2^(exp_fp32) = 2^(e-127) or 2^(-126-m)
+		if exp_fp32 > cls.exp_max:		# overflow, clip
 			e = 15						# s.1111.110
 			exp_fp8 = 8					# 15-cls.bias
-		elif exp_fp_high < cls.exp_min:	#
+		elif exp_fp32 < cls.exp_min:	# subnormal + underflow
 			e = 0						# s.0000
 			exp_fp8 = -6				# 1-cls.bias
 		else:							# normal range
-			e = exp_fp_high+cls.bias	# s.0001 ~ s.1111
-			exp_fp8 = e - cls.bias
+			e = exp_fp32+cls.bias		# s.0001 ~ s.1111
+			exp_fp8 = exp_fp32			#
 		#
-		# print("exp_fp8:", exp_fp8)
-		frac_fp_high = num_abs * (2**-exp_fp8)	# 2^(exp_fp_high-exp_fp16) * 1.f
-		# rint("frac_fp_high:", frac_fp_high)
-		if frac_fp_high >= 2:					# overflow, clip
+		frac_fp8 = num_abs * (2**-exp_fp8)		# 2^(exp_fp32-exp_fp8) * 1.f
+		if frac_fp8 >= 2.0:						# exp_fp32-exp_fp8 >= 1, overflow, clip
 			frac = 6							# s.1111.110
-		else:
-			if frac_fp_high >= 1:		# 1.f
-				frac_fp_high -= 1		# 0.f
+		else:									# [0,2)
+			if frac_fp8 >= 1.0:					# 1.f
+				frac_fp8 -= 1.0					# 0.f
 			# RNE
-			shift_num = frac_fp_high*(2**3)		# left shift 3 bits
-			floor_num = int(shift_num)			# trunc
+			shift_num = frac_fp8*(2**3)			# left shift 3 bits
+			floor_num = np.floor(shift_num)
+			int_num = int(floor_num)
 			delta = shift_num - floor_num
 			if delta > 0.5:						# > midpoint
-				frac = floor_num + 1
+				frac = int_num + 1
 			elif delta == 0.5:					# midpoint, tie even
-				if floor_num % 2 == 0:
-					frac = floor_num
+				if int_num % 2 == 0:			# int operation
+					frac = int_num
 				else:
-					frac = floor_num + 1
+					frac = int_num + 1
 			else:								# < midpoint
-				frac = floor_num
+				frac = int_num
 			# clip: when e=15(1111), frac<7(111)
 			if e == 15:
 				frac = min(frac, 6)
 		#
-		# print(f"for FP8: e=[{e}], frac=[{frac}]")
 		fp8_value = e*(2**3) + frac
 		if src_num < 0:
 			fp8_value += 128
@@ -156,8 +156,8 @@ class FP8E4M3:
 		#
 		exp  = (int.from_bytes(binary_fp8, 'big') >> 3) & 0xF	# E4
 		mant = int.from_bytes(binary_fp8, 'big') & 0x7			# M3
+		#
 		frac = mant * (2**(-3))		# right shift 3 bits
-		print(f"exp: {exp}, mant: {mant}, frac: {frac}")
 		if exp > 0:					# normal
 			return s * 2**(exp-cls.bias) * (1+frac)
 		else:						# subnormal
