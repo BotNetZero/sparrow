@@ -7,7 +7,7 @@ Description   :
 import torch
 import struct
 import numpy as np
-from src.common.symbol import DataType, data_types
+from src.common.symbol import DataType
 
 
 class FP8E4M3:
@@ -30,7 +30,7 @@ class FP8E4M3:
 	exp_max = 8		# s.1111.110 = 1.75*2^8
 	exp_min = -6	# s.0001.000 = 2^(-6)
 	#
-	dtype = data_types[DataType.fp8.name]	# uint8
+	dtype = DataType.fp8.value	# uint8
 
 	@classmethod
 	def convert_to_fp8(cls, tensor):
@@ -39,6 +39,8 @@ class FP8E4M3:
 		"""
 		if tensor.dtype not in (torch.float, torch.float16, torch.bfloat16):
 			raise NotImplementedError(f"Not support type conversion: [{tensor.dtype}] --> FP8E4M3")
+
+		
 
 		# specials
 		fp8_value = cls._convert_to_fp8_specials(tensor)
@@ -117,7 +119,7 @@ class FP8E4M3:
 		fp_type = fp_type.lower()
 		if fp_type not in (DataType.fp32.name, DataType.fp16.name, DataType.bf16.name):
 			raise NotImplementedError(f"not support type conversion: FP8E4M3 --> [{fp_type}]")
-		dtype = data_types[fp_type]
+		dtype = DataType[fp_type].value
 		#
 		fp_value = cls._convert_from_fp8_specials(tensor)
 		if fp_value is not None:
@@ -147,7 +149,7 @@ class FP8E4M3:
 		translate uint8 to real number FP8
 		No any operations for conversing low FP to high FP
 		"""
-		if tensor.dtype != data_types[DataType.fp8.name]:
+		if tensor.dtype != cls.dtype:
 			raise TypeError(f"input tensor type [{tensor.dtype}] error, it is not FP8!!!")
 		#
 		binary_fp8 = struct.pack('!B', tensor.item())			# uint8
@@ -178,7 +180,7 @@ class FP8E5M2:
 	#
 	max = 57344		#
 	#
-	dtype = data_types[DataType.fp8.name]	# uint8
+	dtype = DataType.fp8.value	# uint8
 
 	@classmethod
 	def convert_to_fp8(cls, tensor):
@@ -187,6 +189,6 @@ class FP8E5M2:
 
 	@classmethod
 	def convert_from_fp8(cls, tensor, fp_type=DataType.fp16.name):
-		if tensor.dtype != data_types[DataType.fp8.name]:
+		if tensor.dtype != cls.dtype:
 			raise TypeError(f"tensor type error: [{tensor.dtype}]")
 		pass

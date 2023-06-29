@@ -2,15 +2,11 @@
 model compression: quantization, pruning
 
 ## Tasks
-1. :building_construction: FP8 
-	- :white_check_mark: conversion schema
-	- :stop_sign: quantization operation
-
-2. :stop_sign: modules support FP8
-
-3. :stop_sign: FP8 autocast
-
+1. :white_check_mark: FP8 qnt schema
+2. :building_construction: modules in FP8
+3. :stop_sign: autograd, scale & shift
 4. :stop_sign: FP8 & FP32 comparision
+
 
 ## Quantization
 
